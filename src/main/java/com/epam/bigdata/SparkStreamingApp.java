@@ -67,7 +67,7 @@ public class SparkStreamingApp {
             conf.set("zookeeper.znode.parent", "/hbase-unsecure");
             HTable table = new HTable(conf, "logs_file");
                 Put put = new Put(Bytes.toBytes(new java.util.Date().getTime()));
-                put.add(Bytes.toBytes("details"), Bytes.toBytes("logs_file"), Bytes.toBytes(tuple2._2()));
+                put.add(Bytes.toBytes("logs"), Bytes.toBytes("logs_file"), Bytes.toBytes(tuple2._2()));
                 try {
                     table.put(put);
                 } catch (IOException e) {

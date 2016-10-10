@@ -9,10 +9,6 @@ import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -64,7 +60,9 @@ public class SparkStreamingApp {
         JavaPairReceiverInputDStream<String, String> messages =
                 KafkaUtils.createStream(jssc, zkQuorum, group, topicMap);
         Configuration conf = HBaseConfiguration.create();
-
+        conf.set("hbase.zookeeper.property.clientPort", "2181");
+        conf.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
+        conf.set("zookeeper.znode.parent", "/hbase-unsecure");
         HTable table = new HTable(conf, "logs_file");
         JavaDStream<String> lines = messages.map(tuple2 -> {
                 Put put = new Put(Bytes.toBytes(new java.util.Date().getTime()));

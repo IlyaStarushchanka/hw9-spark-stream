@@ -54,34 +54,13 @@ public class SparkStreamingApp {
         JavaPairReceiverInputDStream<String, String> messages =
                 KafkaUtils.createStream(jssc, zkQuorum, group, topicMap);
 
-        JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {
-            @Override
-            public String call(Tuple2<String, String> tuple2) {
-
-                System.out.println("###1 " + tuple2.toString());
-                return tuple2._2();
-            }
+        JavaDStream<String> lines = messages.map(tuple2 -> {
+            System.out.println("###1 " + tuple2.toString());
+            return tuple2._2();
         });
 
-        JavaDStream<String> words = lines.flatMap(new FlatMapFunction<String, String>() {
-            @Override
-            public Iterator<String> call(String x) {
-                return Arrays.asList(SPACE.split(x)).iterator();
-            }
-        });
-
-        JavaPairDStream<String, Integer> wordCounts = words.mapToPair(
-                new PairFunction<String, String, Integer>() {
-                    @Override
-                    public Tuple2<String, Integer> call(String s) {
-                        return new Tuple2<>(s, 1);
-                    }
-                }).reduceByKey(new Function2<Integer, Integer, Integer>() {
-            @Override
-            public Integer call(Integer i1, Integer i2) {
-                return i1 + i2;
-            }
-        });
+        JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(SPACE.split(x)).iterator());
+        JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1)).reduceByKey((i1,i2) -> i1 + i2);
 
         wordCounts.print();
         jssc.start();

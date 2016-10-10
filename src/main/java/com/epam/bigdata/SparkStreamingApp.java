@@ -75,11 +75,10 @@ public class SparkStreamingApp {
                 System.out.println("###1 " + tuple2.toString());
                 return new String(tuple2._2());
         });
-
-       /* JavaDStream<String> lines = messages.map(tuple2 -> {
+        JavaDStream<String> lines1 = messages.map(tuple2 -> {
             System.out.println("###1 " + tuple2.toString());
             return tuple2._2();
-        });*/
+        });
 
         JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(SPACE.split(x)).iterator());
         JavaPairDStream<String, Integer> wordCounts = words

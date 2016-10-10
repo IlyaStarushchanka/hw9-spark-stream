@@ -1,11 +1,17 @@
 package com.epam.bigdata;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 import scala.Tuple2;
 
 import org.apache.spark.SparkConf;
@@ -53,14 +59,32 @@ public class SparkStreamingApp {
 
         JavaPairReceiverInputDStream<String, String> messages =
                 KafkaUtils.createStream(jssc, zkQuorum, group, topicMap);
-
+        Configuration conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.property.clientPort", "2181");
+        conf.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
+        conf.set("zookeeper.znode.parent", "/hbase");
+        HTable table = new HTable(conf, "logs_file");
         JavaDStream<String> lines = messages.map(tuple2 -> {
-            System.out.println("###1 " + tuple2.toString());
-            return tuple2._2();
+                Put put = new Put(Bytes.toBytes(new java.util.Date().getTime()));
+                put.add(Bytes.toBytes("details"), Bytes.toBytes("logs_file"), Bytes.toBytes(tuple2._2()));
+                try {
+                    table.put(put);
+                } catch (IOException e) {
+                    System.out.println("### IOException" + e.getMessage());
+                }
+                System.out.println("###1 " + tuple2.toString());
+                return new String(tuple2._2());
         });
 
+       /* JavaDStream<String> lines = messages.map(tuple2 -> {
+            System.out.println("###1 " + tuple2.toString());
+            return tuple2._2();
+        });*/
+
         JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(SPACE.split(x)).iterator());
-        JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1)).reduceByKey((i1,i2) -> i1 + i2);
+        JavaPairDStream<String, Integer> wordCounts = words
+                .mapToPair(s -> new Tuple2<>(s, 1))
+                .reduceByKey((i1,i2) -> i1 + i2);
 
         wordCounts.print();
         jssc.start();

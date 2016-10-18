@@ -77,7 +77,7 @@ public class SparkStreamingApp {
 
             Date date = TMS_FORMATTER.parse(fields[1]);
 
-            Put put = new Put(Bytes.toBytes(new java.util.Date().getTime()));
+            Put put = new Put(Bytes.toBytes(rowKey));
             put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bid_Id"), Bytes.toBytes(fields[0]));
             put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("timestamp_date"), Bytes.toBytes(FORMATTER.format(date)));
             put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ipinyou_Id"), Bytes.toBytes(fields[2]));

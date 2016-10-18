@@ -62,46 +62,49 @@ public class SparkStreamingApp {
                 KafkaUtils.createStream(jssc, zkQuorum, group, topicMap);
 
         JavaDStream<String> lines = messages.map(tuple2 -> {
-            Configuration conf = HBaseConfiguration.create();
-            conf.set("hbase.zookeeper.property.clientPort", "2181");
-            conf.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
-            conf.set("zookeeper.znode.parent", "/hbase-unsecure");
-            HTable table = new HTable(conf, tableName);
             String[] fields = tuple2._2().toString().split("\\t");
+            if (!"null".equals(fields[2])) {
 
-            String rowKey = fields[2] + "_" + fields[1];
+                Configuration conf = HBaseConfiguration.create();
+                conf.set("hbase.zookeeper.property.clientPort", "2181");
+                conf.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
+                conf.set("zookeeper.znode.parent", "/hbase-unsecure");
+                HTable table = new HTable(conf, tableName);
 
-            UserAgent ua = UserAgent.parseUserAgentString(fields[3]);
-            String device =  ua.getBrowser() != null ? ua.getOperatingSystem().getDeviceType().getName() : null;
-            String osName = ua.getBrowser() != null ? ua.getOperatingSystem().getName() : null;
 
-            Date date = TMS_FORMATTER.parse(fields[1]);
+                String rowKey = fields[2] + "_" + fields[1];
 
-            Put put = new Put(Bytes.toBytes(rowKey));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bid_Id"), Bytes.toBytes(fields[0]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("timestamp_date"), Bytes.toBytes(FORMATTER.format(date)));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ipinyou_Id"), Bytes.toBytes(fields[2]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_agent"), Bytes.toBytes(fields[3]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ip"), Bytes.toBytes(fields[4]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("region"), Bytes.toBytes(Integer.parseInt(fields[5])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("city"), Bytes.toBytes(Integer.parseInt(fields[6])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_exchange"), Bytes.toBytes(Integer.parseInt(fields[7])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("domain"), Bytes.toBytes(fields[8]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("url"), Bytes.toBytes(fields[9]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("anonymous_url_id"), Bytes.toBytes(fields[10]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_id"), Bytes.toBytes(fields[11]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_width"), Bytes.toBytes(Integer.parseInt(fields[12])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_height"), Bytes.toBytes(Integer.parseInt(fields[13])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_visibility"), Bytes.toBytes(Integer.parseInt(fields[14])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_format"), Bytes.toBytes(Integer.parseInt(fields[15])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("paying_price"), Bytes.toBytes(Integer.parseInt(fields[16])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("creative_id"), Bytes.toBytes(fields[17]));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bidding_price"), Bytes.toBytes(Integer.parseInt(fields[18])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("advertiser_id"), Bytes.toBytes(Integer.parseInt(fields[19])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_tags"), Bytes.toBytes(Long.parseLong(fields[20])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("stream_id"), Bytes.toBytes(Integer.parseInt(fields[21])));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("device"), Bytes.toBytes(device));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("os_name"), Bytes.toBytes(osName));
+                UserAgent ua = UserAgent.parseUserAgentString(fields[3]);
+                String device = ua.getBrowser() != null ? ua.getOperatingSystem().getDeviceType().getName() : null;
+                String osName = ua.getBrowser() != null ? ua.getOperatingSystem().getName() : null;
+
+                Date date = TMS_FORMATTER.parse(fields[1]);
+
+                Put put = new Put(Bytes.toBytes(rowKey));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bid_Id"), Bytes.toBytes(fields[0]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("timestamp_date"), Bytes.toBytes(FORMATTER.format(date)));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ipinyou_Id"), Bytes.toBytes(fields[2]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_agent"), Bytes.toBytes(fields[3]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ip"), Bytes.toBytes(fields[4]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("region"), Bytes.toBytes(Integer.parseInt(fields[5])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("city"), Bytes.toBytes(Integer.parseInt(fields[6])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_exchange"), Bytes.toBytes(Integer.parseInt(fields[7])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("domain"), Bytes.toBytes(fields[8]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("url"), Bytes.toBytes(fields[9]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("anonymous_url_id"), Bytes.toBytes(fields[10]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_id"), Bytes.toBytes(fields[11]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_width"), Bytes.toBytes(Integer.parseInt(fields[12])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_height"), Bytes.toBytes(Integer.parseInt(fields[13])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_visibility"), Bytes.toBytes(Integer.parseInt(fields[14])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_format"), Bytes.toBytes(Integer.parseInt(fields[15])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("paying_price"), Bytes.toBytes(Integer.parseInt(fields[16])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("creative_id"), Bytes.toBytes(fields[17]));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bidding_price"), Bytes.toBytes(Integer.parseInt(fields[18])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("advertiser_id"), Bytes.toBytes(Integer.parseInt(fields[19])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_tags"), Bytes.toBytes(Long.parseLong(fields[20])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("stream_id"), Bytes.toBytes(Integer.parseInt(fields[21])));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("device"), Bytes.toBytes(device));
+                put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("os_name"), Bytes.toBytes(osName));
                 try {
                     table.put(put);
                     table.close();
@@ -109,7 +112,8 @@ public class SparkStreamingApp {
                     System.out.println("### IOException" + e.getMessage());
                 }
                 System.out.println("###1 " + tuple2.toString());
-                return new String(tuple2._2());
+            }
+            return new String(tuple2._2());
         });
         JavaDStream<String> lines1 = messages.map(tuple2 -> {
             System.out.println("###1 " + tuple2.toString());

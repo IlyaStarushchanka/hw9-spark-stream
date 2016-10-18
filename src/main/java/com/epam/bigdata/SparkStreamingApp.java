@@ -53,6 +53,8 @@ public class SparkStreamingApp {
 
         JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(2000));
 
+        jssc.checkpoint("hdfs://sandbox.hortonworks.com/develop/aux/checkpoint");
+
         Map<String, Integer> topicMap = new HashMap<>();
         for (String topic : topics) {
             topicMap.put(topic, numThreads);
@@ -60,6 +62,9 @@ public class SparkStreamingApp {
 
         JavaPairReceiverInputDStream<String, String> messages =
                 KafkaUtils.createStream(jssc, zkQuorum, group, topicMap);
+
+        messages.checkpoint(new Duration(10000));
+
 
         JavaDStream<String> lines = messages.map(tuple2 -> {
             String[] fields = tuple2._2().toString().split("\\t");
@@ -115,17 +120,8 @@ public class SparkStreamingApp {
             }
             return new String(tuple2._2());
         });
-        JavaDStream<String> lines1 = messages.map(tuple2 -> {
-            System.out.println("###1 " + tuple2.toString());
-            return tuple2._2();
-        });
 
-        JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(SPACE.split(x)).iterator());
-        JavaPairDStream<String, Integer> wordCounts = words
-                .mapToPair(s -> new Tuple2<>(s, 1))
-                .reduceByKey((i1,i2) -> i1 + i2);
-
-        wordCounts.print();
+        lines.print();
         jssc.start();
         jssc.awaitTermination();
     }

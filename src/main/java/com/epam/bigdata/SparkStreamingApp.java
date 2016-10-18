@@ -66,7 +66,9 @@ public class SparkStreamingApp {
         messages.checkpoint(new Duration(10000));
 
 
-        JavaDStream<String> lines = messages.map(tuple2 -> {
+        //JavaDStream<String> lines = messages.map(tuple2 -> {
+        messages.foreachRDD(rdd ->
+                rdd.foreach(tuple2 -> {
             String[] fields = tuple2._2().toString().split("\\t");
             if (!"null".equals(fields[2])) {
 
@@ -118,10 +120,11 @@ public class SparkStreamingApp {
                 }
                 System.out.println("###1 " + tuple2.toString());
             }
-            return new String(tuple2._2());
-        });
+            //return new String(tuple2._2());
+        }));
+        //});
 
-        lines.print();
+        messages.print();
         jssc.start();
         jssc.awaitTermination();
     }

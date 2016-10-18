@@ -1,12 +1,11 @@
 package com.epam.bigdata;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.regex.Pattern;
 
+import eu.bitwalker.useragentutils.UserAgent;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
@@ -31,6 +30,8 @@ import org.apache.spark.streaming.kafka.KafkaUtils;
  */
 public class SparkStreamingApp {
     private static final Pattern SPACE = Pattern.compile(" ");
+    private static SimpleDateFormat TMS_FORMATTER = new SimpleDateFormat("yyyyMMddhhmmss");
+    private static SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     public static void main(String[] args) throws Exception {
@@ -65,32 +66,42 @@ public class SparkStreamingApp {
             conf.set("hbase.zookeeper.property.clientPort", "2181");
             conf.set("hbase.zookeeper.quorum", "sandbox.hortonworks.com");
             conf.set("zookeeper.znode.parent", "/hbase-unsecure");
-            HTable table = new HTable(conf, "logs_file");
+            HTable table = new HTable(conf, tableName);
             String[] fields = tuple2._2().toString().split("\\t");
+
+            String rowKey = fields[2] + "_" + fields[1];
+
+            UserAgent ua = UserAgent.parseUserAgentString(fields[3]);
+            String device =  ua.getBrowser() != null ? ua.getOperatingSystem().getDeviceType().getName() : null;
+            String osName = ua.getBrowser() != null ? ua.getOperatingSystem().getName() : null;
+
+            Date date = TMS_FORMATTER.parse(fields[1]);
+
             Put put = new Put(Bytes.toBytes(new java.util.Date().getTime()));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("bid_Id"), Bytes.toBytes(fields[0]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("timestamp_data"), Bytes.toBytes(fields[1]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ipinyou_Id"), Bytes.toBytes(fields[2]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("user_agent"), Bytes.toBytes(fields[3]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ip"), Bytes.toBytes(fields[4]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("region"), Bytes.toBytes(fields[5]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("city"), Bytes.toBytes(fields[6]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_exchange"), Bytes.toBytes(fields[7]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("domain"), Bytes.toBytes(fields[8]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("url"), Bytes.toBytes(fields[9]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("anonymous_url_id"), Bytes.toBytes(fields[10]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_slot_id"), Bytes.toBytes(fields[11]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_slot_width"), Bytes.toBytes(fields[12]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_slot_height"), Bytes.toBytes(fields[13]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_slot_visibility"), Bytes.toBytes(fields[14]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("ad_slot_format"), Bytes.toBytes(fields[15]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("paying_price"), Bytes.toBytes(fields[16]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("creative_id"), Bytes.toBytes(fields[17]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("bidding_price"), Bytes.toBytes(fields[18]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("advertiser_id"), Bytes.toBytes(fields[19]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("user_tags"), Bytes.toBytes(fields[20]));
-            put.addColumn(Bytes.toBytes("logs"), Bytes.toBytes("stream_id"), Bytes.toBytes(fields[21]));
-                //put.add(Bytes.toBytes("logs"), Bytes.toBytes("logs_file"), Bytes.toBytes(tuple2._2()));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bid_Id"), Bytes.toBytes(fields[0]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("timestamp_date"), Bytes.toBytes(FORMATTER.format(date)));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ipinyou_Id"), Bytes.toBytes(fields[2]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_agent"), Bytes.toBytes(fields[3]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ip"), Bytes.toBytes(fields[4]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("region"), Bytes.toBytes(Integer.parseInt(fields[5])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("city"), Bytes.toBytes(Integer.parseInt(fields[6])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_exchange"), Bytes.toBytes(Integer.parseInt(fields[7])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("domain"), Bytes.toBytes(fields[8]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("url"), Bytes.toBytes(fields[9]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("anonymous_url_id"), Bytes.toBytes(fields[10]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_id"), Bytes.toBytes(fields[11]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_width"), Bytes.toBytes(Integer.parseInt(fields[12])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_height"), Bytes.toBytes(Integer.parseInt(fields[13])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_visibility"), Bytes.toBytes(Integer.parseInt(fields[14])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("ad_slot_format"), Bytes.toBytes(Integer.parseInt(fields[15])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("paying_price"), Bytes.toBytes(Integer.parseInt(fields[16])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("creative_id"), Bytes.toBytes(fields[17]));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("bidding_price"), Bytes.toBytes(Integer.parseInt(fields[18])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("advertiser_id"), Bytes.toBytes(Integer.parseInt(fields[19])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("user_tags"), Bytes.toBytes(Long.parseLong(fields[20])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("stream_id"), Bytes.toBytes(Integer.parseInt(fields[21])));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("device"), Bytes.toBytes(device));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("os_name"), Bytes.toBytes(osName));
                 try {
                     table.put(put);
                     table.close();
